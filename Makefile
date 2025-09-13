@@ -23,7 +23,7 @@ help:
 	@echo "  make clean                - Очистка временных файлов."
 
 # Основная команда для полной настройки
-setup: docker permissions dl php terminal vscode configure-vscode init-dl
+setup: docker permissions dl php terminal init-dl
 	@echo "\n\n"
 	@echo "========================================================================"
 	@echo "🎉 УСТАНОВКА ЗАВЕРШЕНА! 🎉"
@@ -121,35 +121,6 @@ terminal:
 	# Установка Zsh как shell по умолчанию
 	sudo chsh -s $$(which zsh) ${USER}
 	@echo "Терминал настроен."
-
-# Установка VS Code
-vscode:
-	@echo "Шаг 6/8: Установка Visual Studio Code..."
-	sudo apt-get install -y wget gpg
-	wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
-	sudo install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/trusted.gpg.d/
-	sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
-	rm -f packages.microsoft.gpg
-	sudo apt-get install -y apt-transport-https
-	sudo apt-get update
-	sudo apt-get install -y code
-	@echo "VS Code установлен."
-
-# Автоматическая настройка VS Code
-configure-vscode: vscode
-	@echo "Шаг 7/8: Автоматическая настройка VS Code..."
-	# Установка расширений
-	code --install-extension erfankhadivar.amoled-black-theme
-	code --install-extension ms-vscode.vscode-json
-	code --install-extension bradlc.vscode-tailwindcss
-	code --install-extension esbenp.prettier-vscode
-	code --install-extension onecentlin.laravel-blade
-	code --install-extension bmewburn.vscode-intelephense-client
-	code --install-extension xdebug.php-debug
-	# Применение настроек
-	mkdir -p $$HOME/.config/Code/User
-	cp vscode/settings.json $$HOME/.config/Code/User/settings.json
-	@echo "Настройки VS Code применены."
 
 # Инициализация окружения dl
 init-dl:
