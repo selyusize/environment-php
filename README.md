@@ -36,7 +36,7 @@
 1.  **Клонирование репозитория** (замените URL на ваш):
     ```bash
     cd ~
-    git clone [https://github.com/selyusize/php-environment.git](https://github.com/selyusize/php-environment.git)
+    git clone https://github.com/selyusize/php-environment.git
     cd php-environment
     ```
 2.  **Запуск волшебной команды**:
