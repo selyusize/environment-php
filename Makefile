@@ -14,16 +14,17 @@ help:
 	@echo "  make permissions          - Настройка прав для /var/www и Docker."
 	@echo "  make dl                   - Установка утилиты local-deploy."
 	@echo "  make php                  - Установка PHP 8.2 и необходимых расширений."
+	@echo "  make init-dl              - Запуск 'dl service up' для инициализации окружения."
 	@echo "  make terminal             - Установка и настройка Zsh, Oh My Zsh и шрифтов."
 	@echo "  make vscode               - Установка Visual Studio Code."
 	@echo "  make configure-vscode     - Установка расширений и применение настроек VS Code."
-	@echo "  make init-dl              - Запуск 'dl service up' для инициализации окружения."
 	@echo "  make fix-docker-repo      - Исправление поврежденного репозитория Docker."
 	@echo "  make status               - Проверка статуса установленных компонентов."
 	@echo "  make clean                - Очистка временных файлов."
+	@echo "  make stop-port-80         - Остановка процессов на порту 80."
 
-# Основная команда для полной настройки
-setup: docker permissions dl php terminal init-dl
+# Основная команда для полной настройки (Zsh перенесен в конец)
+setup: docker permissions dl php init-dl terminal
 	@echo "\n\n"
 	@echo "========================================================================"
 	@echo "🎉 УСТАНОВКА ЗАВЕРШЕНА! 🎉"
@@ -34,7 +35,7 @@ setup: docker permissions dl php terminal init-dl
 
 # Установка Docker & Docker-compose
 docker:
-	@echo "Шаг 1/8: Установка Docker и Docker Compose..."
+	@echo "Шаг 1/6: Установка Docker и Docker Compose..."
 	sudo apt-get update
 	sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common libssl-dev libffi-dev git wget nano
 	# Установка Docker через официальный метод
@@ -57,7 +58,7 @@ docker:
 
 # Настройка прав
 permissions:
-	@echo "Шаг 2/8: Настройка прав доступа..."
+	@echo "Шаг 2/6: Настройка прав доступа..."
 	-sudo groupadd docker
 	sudo usermod -aG docker ${USER}
 	sudo mkdir -p /var/www
@@ -66,7 +67,7 @@ permissions:
 
 # Установка утилиты local-deploy (dl)
 dl:
-	@echo "Шаг 3/8: Установка local-deploy (dl)..."
+	@echo "Шаг 3/6: Установка local-deploy (dl)..."
 	cd ~ && rm -rf .local/bin/dl .config/dl
 	sudo apt-get update
 	sudo apt-get install -y ca-certificates gnupg
@@ -79,7 +80,7 @@ dl:
 
 # Установка PHP 8.2
 php:
-	@echo "Шаг 4/8: Установка PHP 8.2 и необходимых расширений..."
+	@echo "Шаг 4/6: Установка PHP 8.2 и необходимых расширений..."
 	sudo apt-get update
 	sudo apt-get install -y software-properties-common
 	sudo add-apt-repository ppa:ondrej/php -y
@@ -91,9 +92,42 @@ php:
 	sudo chmod +x /usr/local/bin/composer
 	@echo "PHP 8.2 и Composer установлены."
 
-# Кастомизация терминала
+# Остановка процессов на порту 80
+stop-port-80:
+	@echo "Проверка и остановка процессов на порту 80..."
+	@if sudo lsof -ti:80 >/dev/null 2>&1; then \
+		echo "Найдены процессы на порту 80. Останавливаем..."; \
+		sudo lsof -ti:80 | xargs -r sudo kill -9; \
+		echo "Процессы на порту 80 остановлены."; \
+	else \
+		echo "Порт 80 свободен."; \
+	fi
+	@if sudo systemctl is-active --quiet apache2; then \
+		echo "Останавливаем Apache2..."; \
+		sudo systemctl stop apache2; \
+		sudo systemctl disable apache2; \
+		echo "Apache2 остановлен и отключен."; \
+	fi
+	@if sudo systemctl is-active --quiet nginx; then \
+		echo "Останавливаем Nginx..."; \
+		sudo systemctl stop nginx; \
+		sudo systemctl disable nginx; \
+		echo "Nginx остановлен и отключен."; \
+	fi
+
+# Инициализация окружения dl
+init-dl: stop-port-80
+	@echo "Шаг 5/6: Инициализация окружения local-deploy..."
+	@echo "Перезапуск Docker для применения групповых настроек..."
+	sudo systemctl restart docker
+	sleep 3
+	@echo "Запуск dl service up..."
+	dl service up || (echo "Ошибка при запуске dl service up. Попробуем с флагом --recreate..." && dl service up --recreate)
+	@echo "Окружение local-deploy инициализировано."
+
+# Кастомизация терминала (перенесено в конец)
 terminal:
-	@echo "Шаг 5/8: Настройка терминала (Zsh, Oh My Zsh, Powerlevel10k)..."
+	@echo "Шаг 6/6: Настройка терминала (Zsh, Oh My Zsh, Powerlevel10k)..."
 	sudo apt-get install -y zsh curl
 	# Установка Oh My Zsh (только если не установлен)
 	@if [ ! -d "$$HOME/.oh-my-zsh" ]; then \
@@ -122,12 +156,6 @@ terminal:
 	sudo chsh -s $$(which zsh) ${USER}
 	@echo "Терминал настроен."
 
-# Инициализация окружения dl
-init-dl:
-	@echo "Шаг 8/8: Инициализация окружения local-deploy..."
-	dl service up
-	@echo "Окружение local-deploy инициализировано."
-
 # Дополнительные команды
 clean:
 	@echo "Очистка временных файлов..."
@@ -143,5 +171,7 @@ status:
 	@echo "VS Code version:" && code --version 2>/dev/null || echo "VS Code не установлен"
 	@echo "Zsh version:" && zsh --version 2>/dev/null || echo "Zsh не установлен"
 	@echo "DL version:" && dl --version 2>/dev/null || echo "DL не установлен"
+	@echo "Проверка порта 80:"
+	@sudo lsof -i:80 2>/dev/null || echo "Порт 80 свободен"
 
-.PHONY: help setup docker permissions dl php terminal vscode configure-vscode init-dl clean status
+.PHONY: help setup docker permissions dl php terminal vscode configure-vscode init-dl clean status stop-port-80
