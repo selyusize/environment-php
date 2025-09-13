@@ -168,10 +168,10 @@ status:
 	@echo "Docker Compose version:" && docker-compose --version 2>/dev/null || echo "Docker Compose не установлен"
 	@echo "PHP version:" && php --version 2>/dev/null || echo "PHP не установлен"
 	@echo "Composer version:" && composer --version 2>/dev/null || echo "Composer не установлен"
-	@echo "VS Code version:" && code --version 2>/dev/null || echo "VS Code не установлен"
 	@echo "Zsh version:" && zsh --version 2>/dev/null || echo "Zsh не установлен"
 	@echo "DL version:" && dl --version 2>/dev/null || echo "DL не установлен"
+	@echo "Tree version:" && tree --version 2>/dev/null || echo "Tree не установлен"
 	@echo "Проверка порта 80:"
 	@sudo lsof -i:80 2>/dev/null || echo "Порт 80 свободен"
 
-.PHONY: help setup docker permissions dl php terminal vscode configure-vscode init-dl clean status stop-port-80
+.PHONY: help setup docker permissions dl php terminal init-dl clean status stop-port-80
